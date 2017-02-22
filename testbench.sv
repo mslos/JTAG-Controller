@@ -60,7 +60,7 @@ module jtag_test ();
       tms = 1'b1; #1 #1
       //move into shift DR
       tms = 1'b1; #1 #1
-      tms = 1'b0; #1 #1
+      tms = 1'b1; #1 #1
       tms = 1'b0; #1 #1
       //shift 32 bits
       #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
