@@ -55,7 +55,7 @@ module jtag_test ();
       tdi = 1'b0;
       tms = 1'b0; #1 #1
       tdi = 1'b1;
-      tms = 1'b0; #1 #1
+      // tms = 1'b0; #1 #1
       // move into latch IR
       tms = 1'b1; #1 #1
       //move into shift DR
