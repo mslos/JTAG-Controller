@@ -3,7 +3,7 @@ module jtag_test ();
   localparam REGISTER_SIZE = 4;
   localparam MUX_SIZE = 3;
   localparam  STATE_SIZE = 4;
-
+  
   reg tck;
   reg tdi;
   wire tdo;
@@ -11,11 +11,11 @@ module jtag_test ();
 
   // invert clock every 1 cycle
   always #1 tck <= ~tck;
-
+  
 
   jtag
   #(.REGISTER_SIZE(32),
-    .MUX_SIZE(3),
+    .IR_SIZE(4),
     .STATE_SIZE(4)
    ) jtag_inst
   	(
@@ -24,15 +24,16 @@ module jtag_test ();
       .TDO(tdo),
       .TMS(tms)
     );
-
+  
   initial begin
     // init vars
     tck = 1'b0;
     tdi = 1'b0;
     tms = 1'b1;
-
+    #1
+    
     $display("Starting testbench");
-      #5
+      
       //ensure initial state
       tms = 1'b1; #1 #1
       tms = 1'b1; #1 #1
@@ -63,6 +64,7 @@ module jtag_test ();
       tms = 1'b1; #1 #1
       tms = 1'b0; #1 #1
       //shift 32 bits
+      tdi = 1'b1;
       #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
       #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
       #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
@@ -78,13 +80,13 @@ module jtag_test ();
       tms = 1'b0; #1 #1
 
       #2
-
+    
     $finish;
   end
-
+  
   initial begin
     $dumpfile("dump.vcd");
     $dumpvars(0);
   end
-
+  
 endmodule
