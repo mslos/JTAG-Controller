@@ -34,7 +34,7 @@ parameter TEST_LOGIC_RESET = 4'h0,
   UPDATE_IR = 4'h1;
 //=============Input MUX===============================
   parameter BYPASS = 4'b0000;
-  parameter IDCODE = 4'd0001;
+  parameter IDCODE = 4'd1000;
 //=============Internal Variables======================
   reg [IR_SIZE-1:0] IR;
   reg [IR_SIZE-1:0] LATCH_IR;
@@ -179,9 +179,9 @@ wire        idcode_tdo;
 always @ (posedge TCK)
 begin
   if (state == TEST_LOGIC_RESET)
-    DR_IDCODE <= 32'hffffffff;
+    DR_IDCODE <= 32'hf0f0f0f0;
   else if(LATCH_IR == IDCODE && state == CAPTURE_DR)
-    DR_IDCODE <= 32'hffffffff;
+    DR_IDCODE <= 32'hf0f0f0f0;
   else if(LATCH_IR == IDCODE && state == SHIFT_DR)
     DR_IDCODE <=  {TDI, DR_IDCODE[REGISTER_SIZE-1:1]};
 end
