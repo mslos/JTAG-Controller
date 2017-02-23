@@ -1,7 +1,4 @@
 // JTAG Registers + TAP Controller
- 
-
-  
   
 //====================================================
 // JTAG Implementation
@@ -44,7 +41,7 @@ parameter TEST_LOGIC_RESET = 4'h0,
   reg [STATE_SIZE-1:0] state;
   reg [STATE_SIZE-1:0] next_state;
 //==========Code startes Here==========================
-  always @ (posedge TCK)
+always @ (posedge TCK)
 begin : JTAG
  case(state)
 	TEST_LOGIC_RESET : if (TMS == 1'b1) begin
@@ -133,26 +130,25 @@ end
 
   
 //inspiration from opencores.org
-wire instruction_tdo;
+reg instruction_tdo;
  
-  always @ (posedge TCK)
+always @ (posedge TCK)
 begin
   if (state == TEST_LOGIC_RESET)
     IR[IR_SIZE-1:0] <= 0;
   else if(state == CAPTURE_IR)
-    IR <= 4'b0000;          // This value is fixed for easier fault detection
+    IR <= 4'b0000;
   else if(state == SHIFT_IR)
     IR[IR_SIZE-1:0] <= {TDI, IR[IR_SIZE-1:1]};
 end
  
-assign instruction_tdo = IR[0];  // This is latched on a negative TCK edge after the output MUX
+assign instruction_tdo = IR[0];
  
 // Updating IR (Instruction Register)
-// IR should be latched on FALLING EDGE of TCK when capture_ir == 1
-  always @ (negedge TCK)
+always @ (negedge TCK)
 begin
  if (state == TEST_LOGIC_RESET)
-    LATCH_IR <= 4'b0000;   // IDCODE 666 selected after reset
+    LATCH_IR <= 4'b0000;
   else if(state == UPDATE_IR)
     LATCH_IR <= IR;
 end
@@ -160,11 +156,13 @@ end
   
 // Bypass register
 wire  bypassed_tdo;
-reg   bypass_reg;  // This is a 1-bit register
+reg   bypass_reg;
  
 always @ (posedge TCK)
 begin
-  if (LATCH_IR == BYPASS && state == CAPTURE_DR)
+  if (state == TEST_LOGIC_RESET)
+    bypass_reg <= 1'b0;
+  else if (LATCH_IR == BYPASS && state == CAPTURE_DR)
     bypass_reg<= 1'b0;
   else if(LATCH_IR == BYPASS && state == SHIFT_DR)
     bypass_reg<= TDI;
@@ -178,32 +176,31 @@ assign bypassed_tdo = bypass_reg;
 reg [REGISTER_SIZE:0] DR_IDCODE;
 wire        idcode_tdo;
  
-  always @ (posedge TCK)
+always @ (posedge TCK)
 begin
-  if (TEST_LOGIC_RESET)
-    DR_IDCODE <= 32'hffffffff;   // IDCODE selected after reset
+  if (state == TEST_LOGIC_RESET)
+    DR_IDCODE <= 32'hffffffff;
   else if(LATCH_IR == IDCODE && state == CAPTURE_DR)
     DR_IDCODE <= 32'hffffffff;
   else if(LATCH_IR == IDCODE && state == SHIFT_DR)
     DR_IDCODE <=  {TDI, DR_IDCODE[REGISTER_SIZE-1:1]};
- 
 end
  
-assign idcode_tdo = DR_IDCODE[0];   // This is latched on a negative TCK edge after the output MUX
+assign idcode_tdo = DR_IDCODE[0];
   
   
   
   
 // Set TDO
-  always @ (SHIFT_IR or LATCH_IR or IDCODE or BYPASS)
-    begin
-      case(LATCH_IR)    // synthesis parallel_case
-        IDCODE:            TDO = idcode_tdo;     // Reading ID code
-        default:           TDO = bypassed_tdo;     // BYPASS instruction
-      endcase
-    end
+always @ (negedge TCK)
+  begin
+    case(LATCH_IR)
+      IDCODE:            TDO = idcode_tdo;
+      default:           TDO = bypassed_tdo;
+    endcase
+  end
   
 
  
   
-endmodule // End of Module arbiter
+endmodule
