@@ -24,7 +24,8 @@ module jtag_test ();
       .TCK(tck),
       .TDI(tdi),
       .TDO(tdo),
-      .TMS(tms)
+      .TMS(tms),
+      .HREADY(1) //permanently ready to write
     );
 
   initial begin
@@ -42,6 +43,9 @@ module jtag_test ();
       tms = 1'b1; #1 #1
       tms = 1'b1; #1 #1
       tms = 1'b1; #1 #1
+
+      //<-Test IDCODE register->
+    /*
       //run test idle
       tms = 1'b0; #1 #1
       tms = 1'b0; #1 #1
@@ -74,6 +78,69 @@ module jtag_test ();
       tms = 1'b1; #1 #1
       tms = 1'b0; #1 #1
 
+ */
+
+      //<-Change IR and set Address->
+     //run test idle
+      tms = 1'b0; #1 #1
+      tms = 1'b0; #1 #1
+      //move to shift IR
+      tms = 1'b1; #1 #1
+      tms = 1'b1; #1 #1
+      tms = 1'b0; #1 #1
+      tms = 1'b0; #1 #1
+      // shifting in IR value
+      tdi = 1'b0; #1 #1
+      tdi = 1'b0; #1 #1
+      tdi = 1'b1; #1 #1
+      tdi = 1'b0;
+      // move into latch IR
+      tms = 1'b1; #1 #1
+      //move into shift DR
+      tms = 1'b1; #1 #1
+      tms = 1'b1; #1 #1
+      tms = 1'b0; #1 #1
+      //shift 32 bits
+      tdi = 1'b1;
+    `DELAY_31
+    `DELAY_31
+      //go into exit1 DR
+      tms = 1'b1; #1 #1
+      //return to run test idle
+      tms = 1'b1; #1 #1
+      tms = 1'b0; #1 #1
+
+
+
+    //<-Change IR and set val to write->
+     //run test idle
+      tms = 1'b0; #1 #1
+      tms = 1'b0; #1 #1
+      //move to shift IR
+      tms = 1'b1; #1 #1
+      tms = 1'b1; #1 #1
+      tms = 1'b0; #1 #1
+      tms = 1'b0; #1 #1
+      // shifting in IR value
+      tdi = 1'b0; #1 #1
+      tdi = 1'b0; #1 #1
+      tdi = 1'b1; #1 #1
+      tdi = 1'b1;
+      // move into latch IR
+      tms = 1'b1; #1 #1
+      //move into shift DR
+      tms = 1'b1; #1 #1
+      tms = 1'b1; #1 #1
+      tms = 1'b0; #1 #1
+      //shift 32 bits
+      tdi = 1'b1;
+    `DELAY_31
+    `DELAY_31
+      //go into exit1 DR
+      tms = 1'b1; #1 #1
+      //return to run test idle
+      tms = 1'b1; #1 #1
+      tms = 1'b0; #1 #1
 
       #2
 
