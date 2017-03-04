@@ -1,0 +1,5 @@
+Version 1 - jtag with basic IRs
+https://www.edaplayground.com/x/53_2
+
+Version 2 - jtag with Master for AHB-Lite
+https://www.edaplayground.com/x/3zgK
