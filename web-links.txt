@@ -6,3 +6,9 @@ https://www.edaplayground.com/x/3zgK
 
 Version 3 - jtag with master for AHB-Lite with working address and write
 https://www.edaplayground.com/x/5f6v
+
+Version 9 - Intermediate between write and ready
+https://www.edaplayground.com/x/2ngt
+
+Version 10 - Tested read function working
+https://www.edaplayground.com/x/69X5
