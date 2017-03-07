@@ -254,10 +254,46 @@ end
 assign wdata_tdo = DR_WDATA[0];
 
 
+// RDATA register
+reg [REGISTER_SIZE-1:0] DR_RDATA;
+reg TOGGLE_READ;
+wire        rdata_tdo;
+
+always @ (posedge TCK)
+begin
+  if (state == TEST_LOGIC_RESET)
+    begin
+    	DR_RDATA <= 32'b0;
+  		TOGGLE_READ <= 1'b0;
+    end
+  else if(LATCH_IR == RDATA && state == SHIFT_DR)
+    DR_RDATA <=  {TDI, DR_RDATA[REGISTER_SIZE-1:1]};
+  else if(LATCH_IR == RDATA && state == UPDATE_DR && HREADY == 1'b1)
+    begin
+    	HADDR <= DR_ADDR;
+    	HWRITE <= 1'b0;
+    	TOGGLE_READ <= 1'b1;
+    end
+end
+
+always @ (posedge TCK)
+begin
+  if (TOGGLE_READ == 1'b1 && LATCH_IR == RDATA)
+    begin
+    	TOGGLE_READ <= 1'b0;
+  		DR_RDATA <= HRDATA;
+    end
+end
+
+assign rdata_tdo = DR_RDATA[0];
+
+
 // Set TDO
 always @ (negedge TCK)
   begin
     case(LATCH_IR)
+      RDATA:			 TDO = rdata_tdo;
+      WDATA:			 TDO = wdata_tdo;
       IDCODE:            TDO = idcode_tdo;
       ADDR:				 TDO = addr_tdo;
       default:           TDO = bypassed_tdo;
