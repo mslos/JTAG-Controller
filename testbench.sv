@@ -11,10 +11,14 @@ module jtag_test ();
   reg tdi;
   wire tdo;
   reg tms;
+  reg hresp;
+  wire hwrite;
+  wire [1:0] htrans;
+  wire [31:0] hwdata;
+  wire [31:0] haddr;
 
   // invert clock every 1 cycle
   always #1 tck <= ~tck;
-
 
   jtag
   #(.REGISTER_SIZE(32),
@@ -26,8 +30,13 @@ module jtag_test ();
       .TDI(tdi),
       .TDO(tdo),
       .TMS(tms),
-      .HREADY(1), //permanently ready to write
-      .HRDATA(32'hF00F) //data to read from AHB-Lite bus
+      .HREADY(1'b1), //permanently ready to write
+      .HRDATA(32'hF00F), //data to read from AHB-Lite bus
+      .HWRITE(hwrite),
+      .HRESP(hresp),
+      .HTRANS(htrans),
+      .HWDATA(hwdata),
+      .HADDR(haddr)
     );
 
   initial begin
