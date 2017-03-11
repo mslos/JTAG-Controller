@@ -80,7 +80,7 @@ module jtag_test ();
     tms = 1'b1; #1 #1
     tms = 1'b0; #1 #1
 
-
+*/
 
 //<-Test of AHBL ADDRESS instruction->
     //run test idle
@@ -144,8 +144,8 @@ module jtag_test ();
     tms = 1'b1; #1 #1
     tms = 1'b0; #1 #1
 
-  */
 
+/*
 //<-Test of AHB READ instruction->
     //run test idle
     tms = 1'b0; #1 #1
@@ -192,7 +192,7 @@ module jtag_test ();
     //return to run test idle
     tms = 1'b1; #1 #1
     tms = 1'b0; #1 #1
-
+*/
     #2
 
     $finish;

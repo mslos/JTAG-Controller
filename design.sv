@@ -51,7 +51,6 @@ parameter TEST_LOGIC_RESET = 4'h0,
   reg [IR_SIZE-1:0] IR;
   reg [IR_SIZE-1:0] LATCH_IR;
   reg [STATE_SIZE-1:0] state;
-  reg [STATE_SIZE-1:0] next_state;
 //==========Code startes Here==========================
 always @ (posedge TCK)
 begin : JTAG
@@ -140,14 +139,12 @@ begin : JTAG
   endcase
 end
 
-
-//inspiration from opencores.org
 reg instruction_tdo;
 
 always @ (posedge TCK)
 begin
   if (state == TEST_LOGIC_RESET)
-    IR[IR_SIZE-1:0] <= 0;
+    IR[IR_SIZE-1:0] <= 0; //TODO: What is this?
   else if(state == CAPTURE_IR)
     IR <= 4'b0000;
   else if(state == SHIFT_IR)
@@ -218,7 +215,7 @@ end
 assign addr_tdo = DR_ADDR[0];
 
 
-// WDATA register
+// WDATA, TOGGLE WRITE, HWRITE register
 reg [REGISTER_SIZE-1:0] DR_WDATA;
 reg TOGGLE_WRITE;
 wire        wdata_tdo;
@@ -229,6 +226,8 @@ begin
     begin
     	DR_WDATA <= 32'b0;
   		TOGGLE_WRITE <= 1'b0;
+          HWRITE <= 1'b0;
+      	HWDATA <= 32'b0;
     end
   else if(LATCH_IR == WDATA && state == CAPTURE_DR)
     DR_WDATA <= 32'b0;
@@ -236,25 +235,21 @@ begin
     DR_WDATA <=  {TDI, DR_WDATA[REGISTER_SIZE-1:1]};
   else if(LATCH_IR == WDATA && state == UPDATE_DR && HREADY == 1'b1)
     begin
-    	HADDR <= DR_ADDR;
     	HWRITE <= 1'b1;
     	TOGGLE_WRITE <= 1'b1;
     end
-end
-
-always @ (posedge TCK)
-begin
-  if (TOGGLE_WRITE == 1'b1 && LATCH_IR == WDATA)
+  else if (TOGGLE_WRITE == 1'b1 && LATCH_IR == WDATA)
     begin
     	TOGGLE_WRITE <= 1'b0;
   		HWDATA <= DR_WDATA;
+      	HWRITE <= 1'b0;
     end
 end
 
 assign wdata_tdo = DR_WDATA[0];
 
 
-// RDATA register
+// RDATA, TOGGLE_READ register
 reg [REGISTER_SIZE-1:0] DR_RDATA;
 reg TOGGLE_READ;
 wire        rdata_tdo;
@@ -270,15 +265,9 @@ begin
     DR_RDATA <=  {TDI, DR_RDATA[REGISTER_SIZE-1:1]};
   else if(LATCH_IR == RDATA && state == UPDATE_DR && HREADY == 1'b1)
     begin
-    	HADDR <= DR_ADDR;
-    	HWRITE <= 1'b0;
     	TOGGLE_READ <= 1'b1;
     end
-end
-
-always @ (posedge TCK)
-begin
-  if (TOGGLE_READ == 1'b1 && LATCH_IR == RDATA)
+  else if (TOGGLE_READ == 1'b1 && LATCH_IR == RDATA)
     begin
     	TOGGLE_READ <= 1'b0;
   		DR_RDATA <= HRDATA;
@@ -287,17 +276,65 @@ end
 
 assign rdata_tdo = DR_RDATA[0];
 
+//Driver for HADDR
+always @ (posedge TCK)
+begin
+  if (state == TEST_LOGIC_RESET)
+    begin
+    	HADDR <= 32'b0;
+    end
+  else if(LATCH_IR == RDATA && state == UPDATE_DR && HREADY == 1'b1)
+    begin
+    	HADDR <= DR_ADDR;
+    end
+  else if(LATCH_IR == WDATA && state == UPDATE_DR && HREADY == 1'b1)
+    begin
+    	HADDR <= DR_ADDR;
+    end
+end
+
+//Driver for HTRANS
+always @ (posedge TCK)
+begin
+  if (state == TEST_LOGIC_RESET)
+    begin
+    	HTRANS <= 2'b0;
+    end
+  else if(LATCH_IR == WDATA && state == UPDATE_DR && HREADY == 1'b1)
+    begin
+      	HTRANS <= 2'b10;
+    end
+  else if (TOGGLE_WRITE == 1'b1 && LATCH_IR == WDATA)
+    begin
+      	HTRANS <= 2'b00;
+    end
+  else if(LATCH_IR == RDATA && state == UPDATE_DR && HREADY == 1'b1)
+    begin
+      	HTRANS <= 2'b10;
+    end
+  else if (TOGGLE_READ == 1'b1 && LATCH_IR == RDATA)
+    begin
+        HTRANS <= 2'b00;
+    end
+end
+
 
 // Set TDO
 always @ (negedge TCK)
   begin
-    case(LATCH_IR)
-      RDATA:			 TDO = rdata_tdo;
-      WDATA:			 TDO = wdata_tdo;
-      IDCODE:            TDO = idcode_tdo;
-      ADDR:				 TDO = addr_tdo;
-      default:           TDO = bypassed_tdo;
-    endcase
+  	if (state == TEST_LOGIC_RESET)
+      begin
+        TDO <= 1'b0;
+      end
+    else begin
+      case(LATCH_IR)
+        RDATA:			 TDO = rdata_tdo;
+        WDATA:			 TDO = wdata_tdo;
+        IDCODE:            TDO = idcode_tdo;
+        ADDR:				 TDO = addr_tdo;
+        default:           TDO = bypassed_tdo;
+      endcase
+    end
   end
 
 
