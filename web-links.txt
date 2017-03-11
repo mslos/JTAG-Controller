@@ -12,3 +12,9 @@ https://www.edaplayground.com/x/2ngt
 
 Version 10 - Tested read function working
 https://www.edaplayground.com/x/69X5
+
+Version 11 - Refactoring for ability to synthesize [WIP]
+https://www.edaplayground.com/x/5G3t
+
+Chip location:
+/home/projects/vlsi/ccs0001/design/modules
