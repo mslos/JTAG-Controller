@@ -328,11 +328,11 @@ always @ (negedge TCK)
       end
     else begin
       case(LATCH_IR)
-        RDATA:			 TDO = rdata_tdo;
-        WDATA:			 TDO = wdata_tdo;
-        IDCODE:            TDO = idcode_tdo;
-        ADDR:				 TDO = addr_tdo;
-        default:           TDO = bypassed_tdo;
+        RDATA:			 TDO <= rdata_tdo;
+        WDATA:			 TDO <= wdata_tdo;
+        IDCODE:          TDO <= idcode_tdo;
+        ADDR:			 TDO <= addr_tdo;
+        default:         TDO <= bypassed_tdo;
       endcase
     end
   end
