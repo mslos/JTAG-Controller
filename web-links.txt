@@ -16,5 +16,8 @@ https://www.edaplayground.com/x/69X5
 Version 11 - Refactored ports muxing to make file synthesizeable
 https://www.edaplayground.com/x/5G3t
 
+Version 12 - Refactored into tasks
+https://www.edaplayground.com/x/3iq8
+
 Chip location:
 /home/projects/vlsi/ccs0001/design/modules
