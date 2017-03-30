@@ -206,8 +206,8 @@ always @ (posedge TCK)
 begin
   if (state == TEST_LOGIC_RESET)
     DR_ADDR <= 32'b0;
-  else if(LATCH_IR == ADDR && state == CAPTURE_DR)
-    DR_ADDR <= 32'b0;
+  //else if(LATCH_IR == ADDR && state == CAPTURE_DR)
+    //DR_ADDR <= 32'b0;
   else if(LATCH_IR == ADDR && state == SHIFT_DR)
     DR_ADDR <=  {TDI, DR_ADDR[REGISTER_SIZE-1:1]};
 end

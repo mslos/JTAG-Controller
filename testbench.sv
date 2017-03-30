@@ -41,6 +41,7 @@ module jtag_test ();
 
   task read_data_register;
     begin
+      tdi = 1'b0;
       //run test idle
       tms = 1'b0; #1 #1
       //select DR scan
@@ -70,17 +71,19 @@ module jtag_test ();
       tms = 1'b1; #1 #1
       //capture DR
       tms = 1'b0; #1 #1
-      //shift DR
-      //tdi = data[0];
+      //shift DR (changing state)
+      tms = 1'b0; #1 #1
+      //shift DR (writing)
       tms = 1'b0;
-      //shift 31 remaining bits
+      //shift first 31 bits
       for(integer count = 0; count<31; count++) begin
          tdi = data[count];
       		#1 #1
         tms = 1'b0;
       end
-      tdi = data[31]; //TODO: Why is there off by one?
-      //go into exit1 DR - still in shift DR
+      // shift last bit while leaving shift DR state
+      tdi = data[31];
+      //go into exit1 DR - (will be next state)
       tms = 1'b1; #1 #1
       //update DR
       tms = 1'b1; #1 #1
@@ -92,7 +95,6 @@ module jtag_test ();
 
   task write_instruction_register;
   input [3:0] instruction;
-  reg end_reg; // dummy register
   begin
     // Have to start from either test_logic_reset or run_test_idle
     //run test idle
@@ -113,8 +115,7 @@ module jtag_test ();
     // move into run_test_idle
     tms = 1'b1; #1 #1
     tms = 1'b0; #1 #1
-    // Fix Verilog delay bug
-    end_reg = 1'b0;
+    tms = 1'b0;
   end
   endtask
 
@@ -149,164 +150,11 @@ module jtag_test ();
 
     test_logic_reset();
 
-//<-Test of IDCODE register->
-    /*
-    //run test idle
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    //move to shift IR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    // shifting in IR value
-    tdi = 1'b0;
-    tms = 1'b0; #1 #1
-    tdi = 1'b0;
-    tms = 1'b0; #1 #1
-    tdi = 1'b0;
-    tms = 1'b0; #1 #1
-    tdi = 1'b1;
-    // move into latch IR
-    tms = 1'b1; #1 #1
-    //move into shift DR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    //shift 32 bits
-    tdi = 1'b1;
-    `DELAY_31
-    `DELAY_31
-    //go into exit1 DR
-    tms = 1'b1; #1 #1
-    //return to run test idle
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
 
-*/
-
-//<-Test of AHBL ADDRESS instruction->
-    /*
-    //run test idle
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    //move to shift IR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    // shifting in IR value
-    tdi = 1'b0; #1 #1
-    tdi = 1'b0; #1 #1
-    tdi = 1'b1; #1 #1
-    tdi = 1'b0;
-    // move into latch IR
-    tms = 1'b1; #1 #1
-    */
- /*
     write_instruction_register(`ADDR);
-
-    //move into shift DR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    //shift 32 bits
-    tdi = 1'b1;
-    `DELAY_31
-    `DELAY_31
-    //go into exit1 DR
-    tms = 1'b1; #1 #1
-    //return to run test idle
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-*/
-    write_instruction_register(`IDCODE);
     write_data_register(32'h89abcdef);
     read_data_register();
-//<-Test of AHBL WRITE instruction->
-    /*
-    //run test idle
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    //move to shift IR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    // shifting in IR value
-    tdi = 1'b0; #1 #1
-    tdi = 1'b0; #1 #1
-    tdi = 1'b1; #1 #1
-    tdi = 1'b1;
-    // move into latch IR
-    tms = 1'b1; #1 #1
-    */
-   /*
-    write_instruction_register(`WDATA);
 
-    //move into shift DR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    //shift 32 bits
-    tdi = 1'b1;
-    `DELAY_31
-    `DELAY_31
-    //go into exit1 DR
-    tms = 1'b1; #1 #1
-    //return to run test idle
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-*/
-
-/*
-//<-Test of AHB READ instruction->
-    //run test idle
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    //move to shift IR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    // shifting in IR value
-    tdi = 1'b0; #1 #1
-    tdi = 1'b1; #1 #1
-    tdi = 1'b0; #1 #1
-    tdi = 1'b0;
-    // move into latch IR
-    tms = 1'b1; #1 #1
-    //move into shift DR
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    //shift 32 bits
-    tdi = 1'b1; #1 #1
-    //go into exit1 DR
-    tms = 1'b1; #1 #1
-    //return to run test idle
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-
-
-    //<-Change IR and set val to read->
-    //run test idle
-    tms = 1'b0; #1 #1
-    tms = 1'b0; #1 #1
-    //move into shift DR
-    tms = 1'b0; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-    //shift 32 bits
-    tdi = 1'b1;
-    `DELAY_31
-    `DELAY_31
-    //go into exit1 DR
-    tms = 1'b1; #1 #1
-    //return to run test idle
-    tms = 1'b1; #1 #1
-    tms = 1'b0; #1 #1
-*/
     #2
 
     $finish;
