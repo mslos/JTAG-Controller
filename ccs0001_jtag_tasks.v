@@ -1,73 +1,132 @@
-task uartm_data_shift (input [7:0] data);
+//macro for shifting a 32 bit register
+`define DELAY_31 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
+
+`define DELAY_32 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
+
+`define BYPASS 4'b0000
+`define IDCODE 4'b1000
+`define ADDR   4'b0100
+`define WDATA  4'b1100
+`define RDATA  4'b0010
+
+task test_logic_reset;
   begin
-    tx_reg <= {1'b1, data, 1'b0, 1'b1};
-    repeat(15) begin
-      @(posedge UART_CLK);
-      tx_reg <= {1'b1, tx_reg[9:1]};
+    tms = 1'b1; #1 #1
+    tms = 1'b1; #1 #1
+    tms = 1'b1; #1 #1
+    tms = 1'b1; #1 #1
+    tms = 1'b1; #1 #1
+    tms = 1'b1;
+  end
+ endtask
+
+task read_data_register;
+  begin
+    tdi = 1'b0;
+    //run test idle
+    tms = 1'b0; #1 #1
+    //select DR scan
+    tms = 1'b1; #1 #1
+    //capture DR
+    tms = 1'b0; #1 #1
+    //shift DR
+    tms = 1'b0; #1 #1
+    //shift 31 remaining bits
+    tms = 1'b0; `DELAY_31 `DELAY_31
+    //go into exit1 DR
+    tms = 1'b1; #1 #1
+    //update DR
+    tms = 1'b1; #1 #1
+    //run test idle
+    tms = 1'b0; #1 #1
+    tms = 1'b0;
+  end
+endtask
+
+task write_data_register (input integer data);
+  //input [31:0] data;
+  begin
+     //run test idle
+    tms = 1'b0; #1 #1
+    //select DR scan
+    tms = 1'b1; #1 #1
+    //capture DR
+    tms = 1'b0; #1 #1
+    //shift DR (changing state)
+    tms = 1'b0; #1 #1
+    //shift DR (writing)
+    tms = 1'b0;
+    //shift first 31 bits
+    for(integer count = 0; count<31; count++) begin
+       tdi = data[count];
+        #1 #1
+      tms = 1'b0;
     end
+    // shift last bit while leaving shift DR state
+    tdi = data[31];
+    //go into exit1 DR - (will be next state)
+    tms = 1'b1; #1 #1
+    //update DR
+    tms = 1'b1; #1 #1
+    //run test idle
+    tms = 1'b0; #1 #1
+    tms = 1'b0;
   end
 endtask
 
-task uartm_rx_data_capture ();
+task write_instruction_register(input integer instruction);
+//input [3:0] instruction;
+begin
+  // Have to start from either test_logic_reset or run_test_idle
+  //run test idle
+  tms = 1'b0; #1 #1
+  tms = 1'b0; #1 #1
+  //move to shift IR
+  tms = 1'b1; #1 #1
+  tms = 1'b1; #1 #1
+  tms = 1'b0; #1 #1
+  tms = 1'b0; #1 #1
+  // shifting in IR value
+  tdi = instruction[0]; #1 #1
+  tdi = instruction[1]; #1 #1
+  tdi = instruction[2]; #1 #1
+  tdi = instruction[3];
+  // move into latch IR
+  tms = 1'b1; #1 #1
+  // move into run_test_idle
+  tms = 1'b1; #1 #1
+  tms = 1'b0; #1 #1
+  tms = 1'b0;
+end
+endtask
+
+
+task jtag_write (input integer data,input integer addr);
   begin
-    rx_reg <= 8'b0;
-    @(negedge uartm_rx_data);
-    #UART_BAUD;
-    repeat(8) begin
-      @(posedge UART_CLK);
-      rx_reg <= {uartm_rx_data, rx_reg[7:1]};
-    end
+    //Test logic reset
+    test_logic_reset;
+    //Make IR equal to address
+    write_instruction_register(`ADDR);
+    //Pass address
+    write_data_register(addr);
+    //Make IR equal to write
+    write_instruction_register(`WDATA);
+    //Pass data and write
+    write_data_register(data);
   end
 endtask
 
-
-
-task uartm_write (input integer data,input integer addr);
+task jtag_read (input integer addr);
   begin
-    //Pass write pnemonic
-    uartm_data_shift(8'h34);
-    uartm_data_shift(8'h34);
-    uartm_data_shift(8'h34);
-    uartm_data_shift(8'h34);
-
-    //Pass write Adddress
-    uartm_data_shift(addr[7:0]);
-    uartm_data_shift(addr[15:8]);
-    uartm_data_shift(addr[23:16]);
-    uartm_data_shift(addr[31:24]);
-
-    //Pass write Data
-    uartm_data_shift(data[7:0]);
-    uartm_data_shift(data[15:8]);
-    uartm_data_shift(data[23:16]);
-    uartm_data_shift(data[31:24]);
+    //Test logic reset
+    test_logic_reset;
+    //Make IR equal to address
+    write_instruction_register(`ADDR);
+    //Pass address
+    write_data_register(addr);
+    //Make IR equal to data
+    write_instruction_registers();
+    //Read out data
+    read_data_register();
   end
 endtask
-
-task uartm_read (input integer addr);
-  begin
-    fork
-      begin
-        //Pass write pnemonic
-        uartm_data_shift(8'h4D);
-        uartm_data_shift(8'h4D);
-        uartm_data_shift(8'h4D);
-        uartm_data_shift(8'h4D);
-        //Pass write Adddress
-        uartm_data_shift(addr[7:0]);
-        uartm_data_shift(addr[15:8]);
-        uartm_data_shift(addr[23:16]);
-        uartm_data_shift(addr[31:24]);
-      end
-      begin
-        //Sample RXdata
-        uartm_rx_data_capture();
-      end
-    join
-  end
-endtask
-
-
-
-
-
