@@ -1,7 +1,3 @@
-//macro for shifting a 32 bit register
-`define DELAY_31 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
-
-`define DELAY_32 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1 #1
 
 `define BYPASS 4'b0000
 `define IDCODE 4'b1000
@@ -9,38 +5,46 @@
 `define WDATA  4'b1100
 `define RDATA  4'b0010
 
-//TODO: How to link tms, tdi, and tdo...etc. to the pads?
+//TODO: How to link tms, tdi, and tdo...etc. to the pads? DONE in test bench
+//TODO: write TDO, TDI on negedge since they are captured on posedge DONE by changing to negedge blocking statements
 
 task test_logic_reset;
   begin
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
-    tms = 1'b1; #1 #1
     tms = 1'b1;
+    repeat(5) begin
+      @(negedge CLK);
+    end
   end
- endtask
+endtask
 
 task read_data_register;
   begin
+    //run test idle
+    @(negedge CLK);
     tdi = 1'b0;
-    //run test idle
-    tms = 1'b0; #1 #1
+    tms = 1'b0;
     //select DR scan
-    tms = 1'b1; #1 #1
+    @(negedge CLK);
+    tms = 1'b1;
     //capture DR
-    tms = 1'b0; #1 #1
+    @(negedge CLK);
+    tms = 1'b0;
     //shift DR
-    tms = 1'b0; #1 #1
+    @(negedge CLK);
+    tms = 1'b0;
     //shift 31 remaining bits
-    tms = 1'b0; `DELAY_31 `DELAY_31
+    repeat(31) begin
+      @(negedge CLK);
+      tms = 1'b0;
+    end
     //go into exit1 DR
-    tms = 1'b1; #1 #1
+    @(negedge CLK);
+    tms = 1'b1;
     //update DR
-    tms = 1'b1; #1 #1
+    @(negedge CLK);
+    tms = 1'b1;
     //run test idle
-    tms = 1'b0; #1 #1
+    @(negedge CLK);
     tms = 1'b0;
   end
 endtask
@@ -49,29 +53,34 @@ task write_data_register (input integer data);
   //input [31:0] data;
   begin
      //run test idle
-    tms = 1'b0; #1 #1
+    @(negedge CLK);
+    tms = 1'b0;
     //select DR scan
-    tms = 1'b1; #1 #1
+    @(negedge CLK);
+    tms = 1'b1;
     //capture DR
-    tms = 1'b0; #1 #1
+    @(negedge CLK);
+    tms = 1'b0;
     //shift DR (changing state)
-    tms = 1'b0; #1 #1
+    @(negedge CLK);
+    tms = 1'b0;
     //shift DR (writing)
+    @(negedge CLK);
     tms = 1'b0;
     //shift first 31 bits
     for(integer count = 0; count<31; count++) begin
-       tdi = data[count];
-        #1 #1
+      @(negedge CLK);
+      tdi = data[count];
       tms = 1'b0;
     end
-    // shift last bit while leaving shift DR state
-    tdi = data[31];
-    //go into exit1 DR - (will be next state)
-    tms = 1'b1; #1 #1
+    @(negedge CLK);
+    tdi = data[31]; // shift last bit while leaving shift DR state
+    tms = 1'b1;     //go into exit1 DR - (will be next state)
     //update DR
-    tms = 1'b1; #1 #1
+    @(negedge CLK);
+    tms = 1'b1;
     //run test idle
-    tms = 1'b0; #1 #1
+    @(negedge CLK);
     tms = 1'b0;
   end
 endtask
@@ -81,23 +90,37 @@ task write_instruction_register(input integer instruction);
 begin
   // Have to start from either test_logic_reset or run_test_idle
   //run test idle
-  tms = 1'b0; #1 #1
-  tms = 1'b0; #1 #1
+  repeat(2) begin
+    @(negedge CLK);
+    tms = 1'b0;
+  end
   //move to shift IR
-  tms = 1'b1; #1 #1
-  tms = 1'b1; #1 #1
-  tms = 1'b0; #1 #1
-  tms = 1'b0; #1 #1
+  @(negedge CLK);
+  tms = 1'b1;
+  @(negedge CLK);
+  tms = 1'b1;
+  @(negedge CLK);
+  tms = 1'b0;
+  @(negedge CLK);
+  tms = 1'b0;
   // shifting in IR value
-  tdi = instruction[0]; #1 #1
-  tdi = instruction[1]; #1 #1
-  tdi = instruction[2]; #1 #1
+  @(negedge CLK);
+  tdi = instruction[0];
+  @(negedge CLK);
+  tdi = instruction[1];
+  @(negedge CLK);
+  tdi = instruction[2];
+  @(negedge CLK);
   tdi = instruction[3];
   // move into latch IR
-  tms = 1'b1; #1 #1
+  @(negedge CLK);
+  tms = 1'b1;
   // move into run_test_idle
-  tms = 1'b1; #1 #1
-  tms = 1'b0; #1 #1
+  @(negedge CLK);
+  tms = 1'b1;
+  @(negedge CLK);
+  tms = 1'b0;
+  @(negedge CLK);
   tms = 1'b0;
 end
 endtask
