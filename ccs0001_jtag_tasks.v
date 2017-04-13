@@ -9,6 +9,8 @@
 `define WDATA  4'b1100
 `define RDATA  4'b0010
 
+//TODO: How to link tms, tdi, and tdo...etc. to the pads?
+
 task test_logic_reset;
   begin
     tms = 1'b1; #1 #1
