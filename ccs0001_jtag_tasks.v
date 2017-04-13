@@ -150,7 +150,7 @@ task jtag_read (input integer addr);
     //Pass address
     write_data_register(addr);
     //Make IR equal to data
-    write_instruction_registers();
+    write_instruction_register();
     //Read out data
     read_data_register();
   end
