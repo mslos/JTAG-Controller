@@ -5,6 +5,11 @@
 `define WDATA  4'b1100
 `define RDATA  4'b0010
 
+// The flipped definitions:
+//`define ADDR   4'b0010
+//`define WDATA  4'b0011
+//`define RDATA  4'b0100
+
 //TODO: How to link tms, tdi, and tdo...etc. to the pads? DONE in test bench
 //TODO: write TDO, TDI on negedge since they are captured on posedge DONE by changing to negedge blocking statements
 
@@ -113,7 +118,7 @@ begin
   @(negedge CLK);
   tdi = instruction[3];
   // move into latch IR
-  @(negedge CLK);
+  //@(negedge CLK);
   tms = 1'b1;
   // move into run_test_idle
   @(negedge CLK);
@@ -150,7 +155,7 @@ task jtag_read (input integer addr);
     //Pass address
     write_data_register(addr);
     //Make IR equal to data
-    write_instruction_register();
+    write_instruction_register(`RDATA);
     //Read out data
     read_data_register();
   end
